@@ -1,0 +1,3 @@
+v0.04 - Fixed the out-of-order TCP problem for now
+      - added some first semblance of a test suite
+v0.03 - some public release
