@@ -1,3 +1,16 @@
+v0.05 - Added much documentation and clarifications thanks to (in no order)
+         theorbtwo, blokhead, Bart Lateur, 
+      - Added live-http-headers.pl example script
+      - Added methods to handle Ethernet and IP packets
+      - Renamed handle_packet to handle_tcp_packet
+      - handle_tcp_packet now accepts both, a raw TCP frame
+        or a NetPacket::TCP hash
+      - The demo script live-http-headers.pl has better/saner defaults
+      - The test script dump-raw.pl has better/saner defaults
+      - added simplicistic ->run method that tries to use sane defaults
+      - Net::Pcap is now a prerequisite
+ 		  
 v0.04 - Fixed the out-of-order TCP problem for now
       - added some first semblance of a test suite
+
 v0.03 - some public release

@@ -1,4 +1,5 @@
 bin/dump-raw.pl
+bin/live-http-headers.pl
 Changes
 lib/Sniffer/Connection.pm
 lib/Sniffer/Connection/HTTP.pm

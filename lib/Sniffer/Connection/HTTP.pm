@@ -29,6 +29,10 @@ which encapsulates most of this.
 
 use base 'Class::Accessor';
 
+use vars qw($VERSION);
+
+$VERSION = '0.05';
+
 my @callbacks = qw(request response closed log);
 __PACKAGE__->mk_accessors(qw(tcp_connection sent_buffer recv_buffer _response _response_chunk_size _response_len _request prev_request),
                           @callbacks);
@@ -89,25 +93,26 @@ sub flush_received {
 
       if (! ($$buffer =~ s!^(.*?\r?\n\r?\n)!!sm)) {
         # need more data before header is complete
-        $self->log->log("Need more header data");
+        $self->log->("Need more header data");
         #$self->recv_buffer($buffer);
         return;
       };
-      
+
       my $h = $1;
       $res = HTTP::Response->parse($h);
       $self->_response($res);
 
       my $len = $res->header('Content-Length');
-      
+
       $self->_response_len( $len );
     };
 
     my $res = $self->_response;
     my $len = $self->_response_len;
     my $chunksize = $self->_response_chunk_size;
-    
-    if ($res->header('Transfer-Encoding') eq 'chunked') {
+
+    my $te = $res->header('Transfer-Encoding');
+    if ($te and $te eq 'chunked') {
       if (! defined $chunksize) {
         if (! ($$buffer =~ s!^\s*([a-f0-9]+)[ \t]*\r\n!!si)) {
           $self->log->("Extracting chunked size failed.");
@@ -118,24 +123,24 @@ sub flush_received {
           $chunksize = hex $1;
           #$self->log->("Chunked size: $chunksize\n");
           $self->_response_chunk_size($chunksize);
-        };      
+        };
       };
       while (defined $chunksize) {
         $self->log->("Chunked size: $chunksize\n");
-        
+
         if (length $$buffer > $chunksize) {
           $self->log->("Got chunk of size $chunksize");
           $self->_response->add_content(substr($$buffer,0,$chunksize));
           $$buffer = substr($$buffer,$chunksize);
           #$self->log->($$buffer);
-          
+
           #$self->log->("Resetting chunk size");
           $self->_response_chunk_size(undef);
         } else {
           # Need more data
           return
         };
-        
+
         if ($chunksize == 0) {
           $self->report_response($res);
           return
@@ -144,19 +149,19 @@ sub flush_received {
     };
 
     # Non-chunked handling:
-    if (length $$buffer < $len) {
+    if (defined $len and length $$buffer < $len) {
       # need more data before header is complete
       $self->log->(sprintf "Need more response body data (%0.0f%%)\r", 100 * ((length $$buffer) / $len))
         if $len;
       return;
     };
 
-    if ($len == 0) {
+    if (defined $len and $len == 0) {
       # can only flush at closing of connection
       $self->log->("Would need to collect whole buffer in connection (unimplemented, taking what I've got)" );
       $len = length $$buffer;
     };
-    
+
     $self->report_response_buffer($buffer,$len);
   };
 };
@@ -164,6 +169,9 @@ sub flush_received {
 sub report_response_buffer {
   my ($self,$buffer,$len) = @_;
   my $res = $self->_response;
+
+  $len = length $$buffer
+    if (! defined $len);
 
   $res->content(substr($$buffer,0,$len));
   $self->log->("Response header and content are ready ($len bytes)");
@@ -247,5 +255,24 @@ logic here.
 Every response accumulates all data in memory instead of
 giving the user the partial response so it can be written
 to disk. This should maybe later be improved.
+
+=head1 BUGS
+
+The whole module suite has almost no tests.
+
+If you experience problems, I<please> supply me with a complete,
+relevant packet dump as the included C<dump-raw.pl> creates. Even
+better, supply me with (failing) tests.
+
+=head1 AUTHOR
+
+Max Maischein (corion@cpan.org)
+
+=head1 COPYRIGHT
+
+Copyright (C) 2005 Max Maischein.  All Rights Reserved.
+
+This code is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut

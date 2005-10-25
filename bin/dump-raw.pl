@@ -21,17 +21,28 @@ my %devinfo;
 my $pattern = "$0-dump-raw.$$.%05g.dump";
 
 my ($usr_device, $pcap_filter) = @ARGV;
+my $device_name = $ARGV[0] || 'any';
 
-$usr_device ||= "realtek"; # because that works for me
-$pcap_filter ||= '(dst localhost && (port 80))  || (src localhost && (port 80))';
+# Set up Net::Pcap
+my ($err);
+my %devinfo;
 
 my @devs = Net::Pcap::findalldevs(\%devinfo, \$err);
-(my $device) = grep {$devinfo{$_} =~ /$usr_device/i} keys %devinfo;
+
+my $device;
+if ($^O =~ /mswin/i) {
+  ($device) = grep {$devinfo{$_} =~ /$device_name/i} keys %devinfo;
+} else {
+  $device = $device_name;
+};
+
 if (! $device) {
-  warn "Couldn't find a device matching /$usr_device/\n";
-  warn "Please give one of the following names (or a suitable substring) on the command line\n";
   die Dumper \%devinfo;
 };
+
+warn "Using '$devinfo{$device}'\n";
+
+$pcap_filter ||= '(dst localhost && (port 80))  || (src localhost && (port 80))';
 
 my $frame = 0;
 sub process_packet {

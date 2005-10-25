@@ -40,7 +40,7 @@ for (@packets) {
   #diag $tcp->{data};
   #diag sprintf "%s:%s\t%s\t%s\t%s\t(%s)\n", @{$tcp}{qw(src_port dest_port seqnum acknum)}, $tcp->{seqnum} + length($tcp->{data}), length ($tcp->{data});
 
-  $s->handle_packet($tcp);
+  $s->handle_tcp_packet($tcp);
 };
 
 my $request = bless( {
