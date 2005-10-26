@@ -21,6 +21,8 @@ defaults to C<any> on Linux and dies on Windows.
 
 my $VERBOSE = 0;
 
+my $device = $^O =~ /MSWin32|cygwin/ ? qr/$ARGV[0]/i : $ARGV[0];
+
 my $sniffer = Sniffer::HTTP->new(
   callbacks => {
       request  => sub { my ($req,$conn) = @_; print ">>>\n", $req->as_string },
@@ -28,5 +30,4 @@ my $sniffer = Sniffer::HTTP->new(
       log      => sub { print $_[0] if $VERBOSE },
       tcp_log  => sub { print $_[0] if $VERBOSE > 1 },
   }
-)->run( qr/$ARGV[0]/i, $ARGV[1] );
-
+)->run( $device, $ARGV[1] );

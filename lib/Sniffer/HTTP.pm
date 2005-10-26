@@ -10,7 +10,7 @@ use Net::Pcap; # just for the convenience function below
 
 use vars qw($VERSION);
 
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 =head1 NAME
 
@@ -84,6 +84,7 @@ sub new {
 
   $args{connections} ||= {};
   $args{callbacks}   ||= {};
+  $args{callbacks}->{log} ||= sub {};
 
   my $user_closed = delete $args{callbacks}->{closed};
   $args{callbacks}->{closed} = sub {
@@ -208,7 +209,6 @@ sub run {
   my $device = $device_name;
   if ($^O eq 'MSWin32') {
     if (ref $device_name eq 'Regexp') {
-      warn ref $device_name;
       ($device) = grep {$devinfo{$_} =~ /$device_name/} keys %devinfo;
     };
   } else {
@@ -237,10 +237,11 @@ sub run {
   Net::Pcap::compile(
     $pcap,
     \$filter,
-    'port 80',
+    $pcap_filter,
     0,
     $netmask
   ) && die 'Unable to compile packet capture filter';
+  Net::Pcap::setfilter($pcap,$filter);
 
   Net::Pcap::loop($pcap, -1, sub { $self->handle_eth_packet($_[2]) }, '') ||
       die 'Unable to perform packet capture';
