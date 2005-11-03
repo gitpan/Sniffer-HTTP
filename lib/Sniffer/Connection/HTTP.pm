@@ -31,7 +31,7 @@ use base 'Class::Accessor';
 
 use vars qw($VERSION);
 
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 my @callbacks = qw(request response closed log);
 __PACKAGE__->mk_accessors(qw(tcp_connection sent_buffer recv_buffer _response _response_chunk_size _response_len _request prev_request),

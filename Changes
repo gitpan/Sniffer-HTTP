@@ -1,7 +1,11 @@
+v0.07 - Added Pcap example filters
+      - added much more magic to select a suitable interface
+        to listen on. See find_device().
+
 v0.06 - Fixed crash if Sniffer::HTTP object is created without a log()
         callback.
       - The PCap filter parameter was not used at all...
-      
+
 v0.05 - Added much documentation and clarifications thanks to (in no order)
          theorbtwo, blokhead, Bart Lateur,
       - Added live-http-headers.pl example script
