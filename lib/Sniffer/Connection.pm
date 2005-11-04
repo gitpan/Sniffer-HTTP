@@ -33,7 +33,7 @@ for sniffing some out-of-order TCP connection.
 
 use vars qw($VERSION);
 
-$VERSION = '0.07';
+$VERSION = '0.08';
 
 my @callbacks = qw(sent_data received_data closed teardown log);
 __PACKAGE__->mk_accessors(qw(src_port dest_port src_host dest_host status last_ack window ), @callbacks);
@@ -59,7 +59,7 @@ sub new {
   $self;
 };
 
-=head2 C<< $conn->init_from_packet TCP>>
+=head2 C<< $conn->init_from_packet TCP >>
 
 Initializes the connection data from a packet.
 
@@ -71,7 +71,7 @@ sub init_from_packet {
   $self->dest_port($tcp->{dest_port});
 };
 
-=head2 C<< $conn->handle_packet TCP>>
+=head2 C<< $conn->handle_packet TCP >>
 
 Handles a packet and updates the status
 according to the packet.
@@ -212,6 +212,8 @@ get auto-closed to reduce resource usage.
 
 Data can only be forwarded after there has been
 the ACK packet for it!
+
+=back
 
 =head1 BUGS
 

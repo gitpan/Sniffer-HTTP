@@ -17,7 +17,16 @@ t/02-chunked/dump-raw.pl-dump-raw.2400.00006.dump
 t/02-chunked/dump-raw.pl-dump-raw.2400.00007.dump
 t/02-chunked/dump-raw.pl-dump-raw.2400.00008.dump
 t/02-chunked/dump-raw.pl-dump-raw.2400.00009.dump
-t/sniffer_http_01_find_device.t
-t/sniffer_http_01_use.t
-t/sniffer_http_02_chunked.t
+t/01-find_device.t
+t/01-use.t
+t/02-chunked.t
+t/03-libpcap_dump.t
+t/03-libpcap_dump/libpcap.dump
+t/04-other_port.t
+t/04-other_port/other-port.dump
+t/99-versions.t
+t/99-manifest.t
+t/99-pod.t
+t/99-todo.t
+t/99-unix-text.t
 META.yml                                 Module meta-data (added by MakeMaker)

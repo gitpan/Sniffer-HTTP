@@ -12,4 +12,3 @@ CVS/
 ^blibdirs$
 bin/.*.sqlite$
 ^downloads/
-

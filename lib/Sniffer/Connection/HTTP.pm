@@ -31,7 +31,7 @@ use base 'Class::Accessor';
 
 use vars qw($VERSION);
 
-$VERSION = '0.07';
+$VERSION = '0.08';
 
 my @callbacks = qw(request response closed log);
 __PACKAGE__->mk_accessors(qw(tcp_connection sent_buffer recv_buffer _response _response_chunk_size _response_len _request prev_request),
@@ -78,6 +78,24 @@ sub received_data {
   $self->flush_received;
 };
 
+sub extract_chunksize {
+  my ($self,$buffer) = @_;
+  my $chunksize;
+  if (! ($$buffer =~ s!^\s*([a-f0-9]+)[ \t]*\r\n!!si)) {
+    $self->log->("Extracting chunked size failed.");
+    #$self->log->($$buffer);
+    (my $copy = $$buffer) =~ s!\n!\\n\n!gs;
+    $copy =~ s!\r!\\r!gs;
+    $self->log->($copy);
+  } else {
+    $chunksize = hex $1;
+    #$self->log->(sprintf "Found chunked size %s (%s remaining)\n", $chunksize, length $$buffer);
+    #$self->log->(length $$buffer);
+    $self->_response_chunk_size($chunksize);
+  };
+  return $chunksize
+};
+
 sub flush_received {
   my ($self) = @_;
   my $buffer = $self->recv_buffer;
@@ -114,38 +132,41 @@ sub flush_received {
     my $te = $res->header('Transfer-Encoding');
     if ($te and $te eq 'chunked') {
       if (! defined $chunksize) {
-        if (! ($$buffer =~ s!^\s*([a-f0-9]+)[ \t]*\r\n!!si)) {
-          $self->log->("Extracting chunked size failed.");
-          (my $copy = $$buffer) =~ s!\n!\\n\n!gs;
-          $copy =~ s!\r!\\r!gs;
-          $self->log->($copy);
-        } else {
-          $chunksize = hex $1;
-          #$self->log->("Chunked size: $chunksize\n");
-          $self->_response_chunk_size($chunksize);
-        };
+        $chunksize = $self->extract_chunksize($buffer);
       };
-      while (defined $chunksize) {
+
+      if (defined $chunksize) {
         $self->log->("Chunked size: $chunksize\n");
+        #$self->log->("Got buffer of size " + length $$buffer);
 
-        if (length $$buffer > $chunksize) {
-          $self->log->("Got chunk of size $chunksize");
+        while (defined $chunksize and length $$buffer >= $chunksize) {
+          #$self->log->("Got chunk of size $chunksize");
+          #$self->log->(">>$$buffer<<");
           $self->_response->add_content(substr($$buffer,0,$chunksize));
+          #$self->log->(substr($$buffer,0,$chunksize));
+          #$self->log->(sprintf "Remaining are %s bytes", length $$buffer);
           $$buffer = substr($$buffer,$chunksize);
-          #$self->log->($$buffer);
 
-          #$self->log->("Resetting chunk size");
           $self->_response_chunk_size(undef);
-        } else {
-          # Need more data
-          return
-        };
+          if ($chunksize == 0) {
+            $self->log->("Got chunksize 0, reporting response");
+            $self->report_response($res);
+            $$buffer =~ s!^\r\n!!;
+            
+            if ($$buffer eq '') {
+              return;
+            };
+          } else {
+            # Get next chunksize, if available
+            $chunksize = $self->extract_chunksize($buffer);
+            #$self->log->("Next size is $chunksize");
+          };
 
-        if ($chunksize == 0) {
-          $self->report_response($res);
           return
+            if ! defined $chunksize;
         };
       };
+      return
     };
 
     # Non-chunked handling:
@@ -211,6 +232,19 @@ sub flush_sent {
       $self->log->("Got header");
       my $h = $1;
       $req = HTTP::Request->parse($h);
+
+      my $host;
+      # should be the IP address of some TCP packet if we don't find the header ...
+      if ($req->header('Host')) {
+        $host = $req->header('Host');
+      } else {
+        warn "Missing Host: header. Don't know how to determine hostname";
+        $host = "???"
+      };
+      $req->uri->scheme('http');
+      $req->uri->host($host);
+      #$req->uri->port(80); # fix from TCP packet!
+
       $self->_request($req);
     };
 
@@ -255,6 +289,8 @@ logic here.
 Every response accumulates all data in memory instead of
 giving the user the partial response so it can be written
 to disk. This should maybe later be improved.
+
+=back
 
 =head1 BUGS
 

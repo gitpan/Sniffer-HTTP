@@ -21,7 +21,12 @@ defaults to C<any> on Linux and dies on Windows.
 
 my $VERBOSE = 0;
 
-my $device = $^O =~ /MSWin32|cygwin/ ? qr/$ARGV[0]/i : $ARGV[0];
+my $device = $ARGV[0];
+
+
+if ($^O =~ /MSWin32|cygwin/ && $device) {
+ $device = qr/$device/i
+};
 
 my $sniffer = Sniffer::HTTP->new(
   callbacks => {

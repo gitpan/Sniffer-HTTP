@@ -46,7 +46,7 @@ for (@packets) {
 my $request = bless( {
                    '_protocol' => 'HTTP/1.1',
                    '_content' => '',
-                   '_uri' => bless( do{\(my $o = '/does_not_exist')}, 'URI::_generic' ),
+                   '_uri' => bless( do{\(my $o = 'http://www.corion.net/does_not_exist')}, 'URI::http' ),
                    '_headers' => bless( {
                                           'user-agent' => 'lwp-request/2.06',
                                           'connection' => 'TE, close',
