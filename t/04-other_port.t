@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 use strict;
-use Test::More tests => 7;
+use Test::More tests => 8;
 use Data::Dumper;
 #use Text::Diff;
 
@@ -16,6 +16,7 @@ sub collect_request {
 
 use_ok 'Sniffer::HTTP';
 
+my $stale_count;
 my $s = Sniffer::HTTP->new(
   callbacks => {
     log      => sub { diag $_[0] },
@@ -23,6 +24,7 @@ my $s = Sniffer::HTTP->new(
     request  => \&collect_request,
     response => \&collect_response,
   },
+  stale_connection => sub { $stale_count++ },
 );
 
 my $err;
@@ -200,3 +202,5 @@ is scalar(@stale),1,"One stale connection now";
 
 @live = $s->live_connections();
 is scalar(@live), 0, "No live connections now";
+
+is $stale_count, 13, "13 stale connections/packets detected.";

@@ -10,8 +10,8 @@ use_ok 'Sniffer::HTTP';
 
 my $s = Sniffer::HTTP->new(
   callbacks => {
-    log      => sub { diag $_[0] },
-    tcp_log  => sub { diag "TCP: $_[0]" },
+    log      => sub { diag "HTTP: $_[0]" },
+    tcp_log  => sub { diag "TCP : $_[0]" },
     request  => \&collect_request,
     response => \&collect_response,
   },
@@ -52,7 +52,7 @@ if (fork()) {
 } else {
   diag "Launching request to '$url'";
   sleep 1;
-  get $url;  
+  get $url;
   exit;
 };
 

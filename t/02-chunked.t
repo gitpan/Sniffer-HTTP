@@ -26,6 +26,7 @@ my $s = Sniffer::HTTP->new(
     request  => \&collect_request,
     response => \&collect_response,
   },
+  stale_connection => sub {},
 );
 
 my @packets = glob "t/02-chunked/dump-raw.pl-dump-raw.*.*.dump";
@@ -80,7 +81,7 @@ The requested URL /does_not_exist was not found on this server.<P>
 is_deeply(\@requests, [$request], "Got the expected requests");
 is_deeply(\@responses, [[$response,$request]], "Got the expected responses")
   or diag Dumper \@responses;
-  
+
 my @stale = $s->stale_connections;
 is_deeply(\@stale,[],"No stale connections");
 

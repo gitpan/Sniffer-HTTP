@@ -11,7 +11,7 @@ use Carp qw(croak);
 
 use vars qw($VERSION);
 
-$VERSION = '0.09';
+$VERSION = '0.10';
 
 =head1 NAME
 
@@ -28,13 +28,13 @@ Sniffer::HTTP - multi-connection sniffer driver
       response => sub { my ($res,$req,$conn) = @_; print $res->code,"\n" },
       log      => sub { print $_[0] if $VERBOSE },
       tcp_log  => sub { print $_[0] if $VERBOSE > 1 },
-      stale_connection 
-               => sub { my ($s,$conn,$key); 
-                        $s->log->("Connection $key is stale."); 
-                        delete $s->connections->{$key}
-                      },
     },
     timeout = 5*60, # seconds after which a connection is considered stale
+    stale_connection
+      => sub { my ($s,$conn,$key);
+               $s->log->("Connection $key is stale.");
+               $s->remove_connection($key);
+             },
   );
 
   $sniffer->run(); # uses the "best" default device
@@ -43,7 +43,7 @@ Sniffer::HTTP - multi-connection sniffer driver
 
   while (1) {
 
-    # retrieve ethernet packet into $eth, 
+    # retrieve ethernet packet into $eth,
     # for example via Net::Pcap
     my $eth = sniff_ethernet_packet;
 
@@ -72,9 +72,10 @@ script that comes with the distribution.
 Creates a new object for handling many HTTP requests.
 You can pass in the following arguments:
 
-  connections - preexisting connections (optional)
-  callbacks   - callbacks for the new connections (hash reference)
-  timeout     - timeout in seconds after which a connection is considered stale
+  connections      - preexisting connections (optional)
+  callbacks        - callbacks for the new connections (hash reference)
+  timeout          - timeout in seconds after which a connection is considered stale
+  stale_connection - callback for stale connections
 
 Usually, you will want to create a new object like this:
 
@@ -87,7 +88,7 @@ except that you will likely do more work than this example.
 
 =cut
 
-__PACKAGE__->mk_accessors(qw(connections callbacks timeout pcap_device));
+__PACKAGE__->mk_accessors(qw(connections callbacks timeout pcap_device stale_connection));
 
 sub new {
   my ($class,%args) = @_;
@@ -95,16 +96,16 @@ sub new {
   $args{connections} ||= {};
   $args{callbacks}   ||= {};
   $args{callbacks}->{log}   ||= sub {};
-  $args{callbacks}->{stale_connection} ||= sub {
-    sub { 
-      my ($s,$conn,$key); 
-      $s->log->($conn->flow . " is stale."); 
-      delete $s->connections->{$key};
-    },
+  $args{stale_connection} ||= sub {
+    my ($s,$conn,$key) = @_;
+    $conn->log->("$key is stale.");
+    $s->remove_connection($key);
   };
-  
+
   $args{timeout} = 300
     unless exists $args{timeout};
+
+  my $self = $class->SUPER::new(\%args);
 
   my $user_closed = delete $args{callbacks}->{closed};
   $args{callbacks}->{closed} = sub {
@@ -114,13 +115,35 @@ sub new {
       $key = join ":", reverse split /:/, $key;
     };
     $_[0]->{log}->("Removing $key");
-    delete $args{connections}->{$key};
+    $self->remove_connection($key);
     goto &$user_closed
       if $user_closed;
   };
 
-  my $self = $class->SUPER::new(\%args);
   $self;
+};
+
+=head2 C<< $sniffer->remove_connection KEY >>
+
+Removes a connection (or a key) from the list
+of connections. This will not have the intended
+effect if the connection is still alive, as it
+will be recreated as soon as the next packet 
+for it is received.
+
+=cut
+
+sub remove_connection {
+  my ($self,$key) = @_;
+  if (ref $key) {
+    my $real_key = $key->flow;
+    if (! exists $self->connections->{$real_key}) {
+      warn "Error: flow() ne connection-key!";
+      $real_key = join ":", reverse split /:/, $real_key;
+    };
+    $key = $real_key;
+  };
+  delete $self->connections->{$key};
 };
 
 =head2 C<< $sniffer->find_or_create_connection TCP, %ARGS >>
@@ -166,7 +189,7 @@ All parameters are optional and default to:
 
   TIMEOUT   - $sniffer->timeout
   TIMESTAMP - time()
-  HANDLER   - $sniffer->callbacks->{stale_connection}
+  HANDLER   - $sniffer->stale_connection
 
 It returns all stale connections.
 
@@ -175,9 +198,9 @@ It returns all stale connections.
 sub stale_connections {
   my ($self,$timeout,$timestamp,$handler) = @_;
   $timeout   ||= $self->timeout;
-  $handler   ||= $self->callbacks->{stale_connection};
+  $handler   ||= $self->stale_connection;
   $timestamp ||= time();
-  
+
   my $cutoff = $timestamp - $timeout;
 
   my $connections = $self->connections;
@@ -204,7 +227,7 @@ sub live_connections {
   my ($self,$timeout,$timestamp) = @_;
   $timeout   ||= $self->timeout;
   $timestamp ||= time();
-  
+
   my $cutoff = $timestamp - $timeout;
 
   my $connections = $self->connections;
@@ -272,7 +295,7 @@ sub handle_tcp_packet {
   $conn->handle_packet($tcp,$ts);
   # Handle callbacks for detection of stale connections
   $self->stale_connections();
-  
+
   # Return the connection that the packet belongs to
   $conn;
 };
@@ -299,7 +322,7 @@ The C<%OPTIONS> can be the following options:
 
 sub run {
   my ($self,$device_name,$pcap_filter,%options) = @_;
-  
+
   my $device = $self->find_device($device_name);
   $pcap_filter ||= "tcp port 80";
 
@@ -315,7 +338,7 @@ sub run {
   unless (defined $pcap) {
     die "Unable to create packet capture on device '$device' - $err";
   };
-  
+
   $self->pcap_device($pcap);
 
   my $filter;
@@ -327,13 +350,13 @@ sub run {
     $netmask
   ) && die 'Unable to compile packet capture filter';
   Net::Pcap::setfilter($pcap,$filter);
-  
+
   my $save;
   if ($options{capture_file}) {
     $save = Net::Pcap::dump_open($pcap,$options{capture_file});
-    END { 
+    END {
       # Emergency cleanup
-      if ($save) { 
+      if ($save) {
         Net::Pcap::dump_flush($save);
         Net::Pcap::dump_close($save);
         undef $save;
@@ -341,14 +364,14 @@ sub run {
     };
   };
 
-  Net::Pcap::loop($pcap, -1, sub { 
+  Net::Pcap::loop($pcap, -1, sub {
     if ($save) {
       Net::Pcap::dump($save, @_[1,2]);
     };
     $self->handle_eth_packet($_[2], $_[1]->{tv_sec});
   }, '')
     || die 'Unable to perform packet capture';
-    
+
   if ($save) {
     Net::Pcap::dump_flush($save);
     Net::Pcap::dump_close($save);
@@ -540,9 +563,9 @@ Is called whenever a connection goes over the C<timeout> limit
 without any activity. The default handler weeds out stale
 connections with the following code:
 
-  sub { 
-    my ($self,$conn,$key); 
-    $self->log->("Connection $key is stale."); 
+  sub {
+    my ($self,$conn,$key);
+    $self->log->("Connection $key is stale.");
     delete $self->connections->{ $key }
   }
 
@@ -552,15 +575,15 @@ Here are some example Net::Pcap filters for common things:
 
 Capture all HTTP traffic between your machine and C<www.example.com>:
 
-     (dest www.example.com && (tcp port 80)) 
+     (dest www.example.com && (tcp port 80))
   || (src  www.example.com && (tcp port 80))
 
 Capture all HTTP traffic between your machine
 and C<www1.example.com> or C<www2.example.com>:
 
-    (dest www1.example.com && (tcp port 80)) 
+    (dest www1.example.com && (tcp port 80))
   ||(src www1.example.com  && (tcp port 80))
-  ||(dest www2.example.com && (tcp port 80)) 
+  ||(dest www2.example.com && (tcp port 80))
   ||(src www2.example.com  && (tcp port 80))
 
 Note that Net::Pcap resolves the IP addresses before using them, so you might
