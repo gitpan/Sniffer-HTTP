@@ -33,10 +33,10 @@ for sniffing some out-of-order TCP connection.
 
 use vars qw($VERSION);
 
-$VERSION = '0.08';
+$VERSION = '0.09';
 
 my @callbacks = qw(sent_data received_data closed teardown log);
-__PACKAGE__->mk_accessors(qw(src_port dest_port src_host dest_host status last_ack window ), @callbacks);
+__PACKAGE__->mk_accessors(qw(src_port dest_port src_host dest_host status last_ack window last_activity), @callbacks);
 
 sub new {
   my($class,%args) = @_;
@@ -71,15 +71,20 @@ sub init_from_packet {
   $self->dest_port($tcp->{dest_port});
 };
 
-=head2 C<< $conn->handle_packet TCP >>
+=head2 C<< $conn->handle_packet TCP [, TIMESTAMP] >>
 
 Handles a packet and updates the status
 according to the packet.
 
+The optional TIMESTAMP parameter allows you to attach
+a timestamp (in seconds since the epoch) to the packet
+if you have a capture file with timestamps. It defaults
+to the value of C<time>.
+
 =cut
 
 sub handle_packet {
-  my ($self, $tcp) = @_;
+  my ($self, $tcp, $timestamp) = @_;
 
   if ($self->flow eq '-:-') {
     $self->init_from_packet($tcp);
@@ -95,14 +100,11 @@ sub handle_packet {
   # Overwrite older sequence numbers
   $self->window->{$dir[0]}->{ $tcp->{seqnum} } = $tcp;
 
-  #warn "Flushing $dir[1] before $tcp->{acknum}";
   $self->flush_window($dir[1], $tcp->{acknum});
+  $self->update_activity($timestamp);
   if (scalar keys %{$self->window->{$dir[1]}} > 32) {
     warn sprintf "$key ($dir[1]): %s packets unacknowledged.", scalar keys %{$self->window->{$dir[1]}};
   };
-  #if (scalar keys %{$self->window->{$dir[1]}}) {
-  #  warn $_ for sort keys %{$self->window->{$dir[1]}};
-  #};
 };
 
 sub flush_window {
@@ -195,6 +197,29 @@ sub tcp_flags {
   my ($val) = @_;
   my $idx = 0;
   join " ", map { $val & 2**$idx++ ? uc : lc } (qw(FIN SYN RST PSH ACK URG ECN CWR));
+};
+
+=head2 C<< last_activity >>
+
+Returns the timestamp in epoch seconds of the last activity of the socket.
+This can be convenient to determine if a connection has gone stale.
+
+This timestamp should be fed in via C<handle_packet> if it is available.
+Capturing via C<Sniffer::HTTP::run> and C<Sniffer::HTTP::run_file>
+supplies the correct L<Net::Pcap> timestamps and thus will reproduce
+all sessions faithfully.
+
+=head2 C<< update_activity [TIMESTAMP] >>
+
+Updates C<last_activity> and supplies a default
+timestamp of C<time>.
+
+=cut
+
+sub update_activity {
+  my ($self,$timestamp) = @_;
+  $timestamp ||= time;
+  $self->last_activity($timestamp);
 };
 
 1;

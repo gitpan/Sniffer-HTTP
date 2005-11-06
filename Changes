@@ -1,9 +1,17 @@
-for 0.10:
-  find_device will go into Net::Pcap::FindDevice (recommended by Bart Lateur and James Mastros)
-  [bart]: I think your "find a device" should be a Net::Pcap extension, not part of Sniffer::HTTP.
-  [bart]: it'd be nice if we could specify a device by IP or subnet, and not just by name or description.
+outstanding for 0.10:
+  - find_device will go into Net::Pcap::FindDevice (recommended by Bart Lateur and James Mastros)
+  - [bart]: I think your "find a device" should be a Net::Pcap extension, not part of Sniffer::HTTP.
+  - [bart]: it'd be nice if we could specify a device by IP or subnet, and not just by name or description.
+  - implement multiple outstanding requests/responses for one connection
 
-- implement multiple outstanding requests/responses
+v0.09 (20051105):
+      - added timeout to Sniffer::HTTP
+      - added stale connection detection to Sniffer::HTTP
+      - added last_activity to Sniffer::Connection
+      - added timestamp handling from Net::Pcap so even
+        captures play back with the correct timestamps
+      - add "Tee to file" capability to ->run() under the 
+        option name "capture_file"
 
 v0.08 (20051104):
       - Make magic less OS dependent:

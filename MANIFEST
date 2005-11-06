@@ -24,6 +24,7 @@ t/03-libpcap_dump.t
 t/03-libpcap_dump/libpcap.dump
 t/04-other_port.t
 t/04-other_port/other-port.dump
+t/05-capture_to_file.t
 t/99-versions.t
 t/99-manifest.t
 t/99-pod.t

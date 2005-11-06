@@ -31,7 +31,7 @@ use base 'Class::Accessor';
 
 use vars qw($VERSION);
 
-$VERSION = '0.08';
+$VERSION = '0.09';
 
 my @callbacks = qw(request response closed log);
 __PACKAGE__->mk_accessors(qw(tcp_connection sent_buffer recv_buffer _response _response_chunk_size _response_len _request prev_request),
@@ -152,7 +152,7 @@ sub flush_received {
             $self->log->("Got chunksize 0, reporting response");
             $self->report_response($res);
             $$buffer =~ s!^\r\n!!;
-            
+
             if ($$buffer eq '') {
               return;
             };
@@ -269,8 +269,10 @@ sub flush_sent {
   };
 };
 
+# Delegate some methods
 sub handle_packet { my $self = shift;$self->tcp_connection->handle_packet(@_); };
 sub flow { my $self = shift; return $self->tcp_connection->flow(@_);};
+sub last_activity { my $self = shift; $self->tcp_connection->last_activity(@_) }
 
 1;
 

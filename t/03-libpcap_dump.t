@@ -1,9 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
-use Test::More tests => 3;
+use Test::More tests => 7;
 use Data::Dumper;
-
-#use NetPacket::TCP;
 
 my (@responses,@requests);
 sub collect_response {
@@ -20,6 +18,7 @@ use_ok 'Sniffer::HTTP';
 my $s = Sniffer::HTTP->new(
   callbacks => {
     log      => sub { diag $_[0] },
+    #tcp_log  => sub { diag "TCP: $_[0]" },
     request  => \&collect_request,
     response => \&collect_response,
   },
@@ -112,3 +111,15 @@ is_deeply(\@requests, [$request1,$request2], "Got the expected requests");
 
 is_deeply(\@responses, [[$response1,$request1],[$response2,$request2]], "Got the expected responses")
   or diag Dumper \$responses[1];
+
+my @stale = $s->stale_connections(10,1131119068);
+is_deeply(\@stale,[],"No stale connections back in time");
+
+my @live = $s->live_connections(10,1131119068);
+is scalar(@live), 1, "One connection is open";
+
+@stale = $s->stale_connections();
+is scalar(@stale),1,"One stale connection now";
+
+@live = $s->live_connections();
+is scalar(@live), 0, "No live connections now";

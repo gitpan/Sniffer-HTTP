@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 use strict;
-use Test::More tests => 3;
+use Test::More tests => 5;
 use Data::Dumper;
 
 use NetPacket::TCP;
@@ -22,6 +22,7 @@ use_ok 'Sniffer::HTTP';
 my $s = Sniffer::HTTP->new(
   callbacks => {
     log      => sub { diag $_[0] },
+    #tcp_log  => sub { diag "TCP: $_[0]" },
     request  => \&collect_request,
     response => \&collect_response,
   },
@@ -79,3 +80,9 @@ The requested URL /does_not_exist was not found on this server.<P>
 is_deeply(\@requests, [$request], "Got the expected requests");
 is_deeply(\@responses, [[$response,$request]], "Got the expected responses")
   or diag Dumper \@responses;
+  
+my @stale = $s->stale_connections;
+is_deeply(\@stale,[],"No stale connections");
+
+my @live = $s->live_connections;
+is_deeply \@live, [], "All connections were closed";
