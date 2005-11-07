@@ -1,13 +1,24 @@
-outstanding for 0.11:
-  - find_device will go into Net::Pcap::FindDevice (recommended by Bart Lateur and James Mastros)
-  - [bart]: I think your "find a device" should be a Net::Pcap extension, not part of Sniffer::HTTP.
-  - [bart]: it'd be nice if we could specify a device by IP or subnet, and not just by name or description.
-  - implement multiple outstanding requests/responses for one connection
+outstanding for 0.12:
 
-v0.10 (20051105):
+Net::Pcap::FindDevice:
+    - Spin off as a separate distribution
+    
+Sniffer::HTTP
+    - implement multiple outstanding requests/responses for one connection
+
+v0.11 (200511xx):
+      - Refactored code out into Net::Pcap::FindDevice which 
+        will soon begin a life of its own in a separate distribution
+        (thanks to Bart Lateur and James Mastros)
+      - You can specify a device by IP and not just by name or description.
+        (suggested by Bart Lateur)
+      - The live-capture test t/05 now has an alarm() to kill
+        itself if it takes over 60 seconds.
+ 
+v0.10 (20051106):
       - Staleness calbacks didn't work at all. Fixed now.
 
-v0.09 (20051105):
+v0.09 (20051106):
       - added timeout to Sniffer::HTTP
       - added stale connection detection to Sniffer::HTTP
       - added last_activity to Sniffer::Connection

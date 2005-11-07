@@ -7,11 +7,12 @@ use NetPacket::Ethernet;
 use NetPacket::IP;
 use NetPacket::TCP;
 use Net::Pcap; # just for the convenience function below
+use Net::Pcap::FindDevice;
 use Carp qw(croak);
 
 use vars qw($VERSION);
 
-$VERSION = '0.10';
+$VERSION = '0.11';
 
 =head1 NAME
 
@@ -309,7 +310,7 @@ over what C<Net::Pcap> does, you need to set up
 Net::Pcap yourself.
 
 The C<DEVICE> parameter is used to determine
-the device via C<find_device>.
+the device via C<find_device> from L<Net::Pcap::FindDevice>.
 
 The C<%OPTIONS> can be the following options:
 
@@ -323,7 +324,7 @@ The C<%OPTIONS> can be the following options:
 sub run {
   my ($self,$device_name,$pcap_filter,%options) = @_;
 
-  my $device = $self->find_device($device_name);
+  my $device = find_device($device_name);
   $pcap_filter ||= "tcp port 80";
 
   my $err;
@@ -416,119 +417,6 @@ sub run_file {
 
   #Net::Pcap::loop($pcap, -1, sub { $self->handle_eth_packet($_[2]) }, '');
   Net::Pcap::loop($pcap, -1, sub { $self->handle_eth_packet($_[2], $_[1]->{tv_sec}) }, '')
-};
-
-=head2 C<< $sniffer->find_device DEVICE >>
-
-Finds a L<Net::Pcap> device based on some criteria:
-
-If the parameter given is a regular expression,
-is used to scan the names I<and> descriptions of the Net::Pcap
-device list. The name of the first matching element
-is returned.
-
-If a L<Net::Pcap> device matching the
-stringified parameter exists, it is returned.
-If there exists no matching device for the scalar,
-C<undef> is returned.
-
-If the parameter is not given or a false value, and there
-is a device named C<any>, that one is returned.
-
-If there is only one network device, the name of
-that device is returned.
-
-If there is only one device left after removing all
-network devices with IP address 127.0.0.1, the name
-of that device is returned.
-
-The name of the device with the default gateway
-(if any) is returned.
-
-Otherwise it gives up and returns C<undef>.
-
-=cut
-
-sub find_device {
-  my ($self, $device_name) = @_;
-  # Set up Net::Pcap
-  my ($err);
-  my %devinfo;
-  my @devs;
-  if ($Net::Pcap::VERSION < 0.07) {
-    @devs = Net::Pcap::findalldevs(\$err, \%devinfo);
-  } else {
-    @devs = Net::Pcap::findalldevs(\%devinfo, \$err);
-  };
-
-  my $device = $device_name;
-  if ($device_name) {
-    if (ref $device_name eq 'Regexp') {
-      ($device) = grep {$_ =~ /$device_name/ || $_ =~ $devinfo{$_}} keys %devinfo;
-    } elsif (exists $devinfo{$device_name}) {
-      $device = $device_name;
-    } else {
-      croak "Don't know how to handle $device_name as a Net::Pcap device";
-    };
-  } else {
-    if (exists $devinfo{any}) {
-      $device = 'any';
-    } elsif (@devs == 1) {
-      $device = $devs[0];
-    } else {
-      # Now we need to actually look at the devices and select the
-      # one with the default gateway:
-
-      # First, get the default gateway by using
-      # `netstat -rn`
-      my $device_ip;
-      my $re_if = $^O eq 'MSWin32'
-                  ? qr/^\s*(?:0.0.0.0)\s+(\S+)\s+(\S+)\s+/
-                  : qr/^(?:0.0.0.0|default)\s+(\S+)\s+.*?(\S+)\s*$/;
-      for (qx{netstat -rn}) {
-        if ( /$re_if/ ) {
-          #$gateway = $1;
-          $device_ip = $2;
-          last;
-        };
-      };
-
-      if (! $device_ip) {
-        croak "Couldn't find IP address/interface of the default gateway interface. Maybe 'netstat' is unavailable?";
-      };
-
-      if (exists $devinfo{$device_ip}) {
-        return $device_ip
-      };
-
-      # Looks like we got an IP and not an interface name.
-      # So scan all interfaces if they have that our IP address.
-
-      my $good_address = unpack "N", pack "C4", (split /\./, $device_ip);
-
-      my @good_devices;
-      for my $device (@devs) {
-        my ($address, $netmask);
-        (Net::Pcap::lookupnet($device, \$address, \$netmask, \$err) == 0) or next;
-        $address != 0 or next;
-        for ($address,$netmask) {
-          $_ = unpack "N", pack "N", $_;
-        };
-
-        if ($address == ($good_address & $netmask)) {
-          push @good_devices, $device;
-        };
-      };
-
-      if (@good_devices == 1) {
-        $device = $good_devices[0];
-      } elsif (@good_devices > 1) {
-        croak "Too many device candidates found (@good_devices)";
-      }
-    };
-  };
-
-  return $device
 };
 
 1;
