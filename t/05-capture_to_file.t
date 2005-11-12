@@ -45,19 +45,18 @@ SKIP: {
   if ($ENV{HTTP_PROXY}) {
     skip 4, "Proxy settings detected - sniffing will not work";
   };
-  if ($Net::Pcap::VERSION < 0.07) {
-    skip 4, "Net::Pcap version too low for breakloop()";
-  };
 
 # This version of fork() works even on Win32:
 if (fork()) {
   alarm 60; # Emergency breakout
   $s->run(undef,"((dst www.cpan.org || src www.cpan.org)) && (tcp port 80)", capture_file => $dumpfile);
+  alarm 0;
 } else {
   diag "Launching request to '$url'";
   sleep 1;
   alarm 55; # Emergency breakout
   get $url;
+  alarm 0;
   exit;
 };
 

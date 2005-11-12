@@ -33,7 +33,7 @@ for sniffing some out-of-order TCP connection.
 
 use vars qw($VERSION);
 
-$VERSION = '0.11';
+$VERSION = '0.12';
 
 my @callbacks = qw(sent_data received_data closed teardown log);
 __PACKAGE__->mk_accessors(qw(src_port dest_port src_host dest_host status last_ack window last_activity), @callbacks);

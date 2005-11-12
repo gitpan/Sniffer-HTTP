@@ -5,7 +5,7 @@ use Carp qw(croak);
 use Exporter::Lite;
 
 use vars qw($VERSION @EXPORT);
-$VERSION = '0.11';
+$VERSION = '0.12';
 @EXPORT = qw(find_device);
 
 =head1 NAME
@@ -61,7 +61,7 @@ sub find_device {
   # Set up Net::Pcap
   #my ($err);
   #my %devinfo;
-  my @devs = net_pcap_findalldevs(\my %devinfo,\my $err);
+  my @devs = Net::Pcap::findalldevs(\my %devinfo,\my $err);
 
   my $device = $device_name;
   if ($device_name) {
@@ -72,7 +72,7 @@ sub find_device {
       $device = $device_name;
     } elsif  ( $device_name =~ m!^\d+\.\d+\.\d+\.\d+$! ) {
       warn "Looks like an IP";
-      ($device) = interfaces_from_ip( $device_name );      
+      ($device) = interfaces_from_ip( $device_name );
     } else {
       croak "Don't know how to handle $device_name as a Net::Pcap device";
     };
@@ -108,12 +108,12 @@ sub find_device {
       };
 
       # Looks like we got an IP and not an interface name.
-      
+
       # This should all go into
       # sub interface_from_ip {}
-      
+
       # So scan all interfaces if they have that IP address.
-      
+
       my @good_devices = interfaces_from_ip($device_ip);
 
       if (@good_devices == 1) {
@@ -130,7 +130,7 @@ sub find_device {
 =head2 C<< interfaces_from_ip IP >>
 
 Returns all interfaces that have the ip C<IP>.
-The value of C<IP> must be given as a string of 
+The value of C<IP> must be given as a string of
 four numbers.
 
 This method is not exported by default so you
@@ -144,40 +144,28 @@ sub interfaces_from_ip {
   my ($ip) = @_;
   my $good_address = unpack "N", pack "C4", (split /\./, $ip);
 
-  my @devs = net_pcap_findalldevs(\my %devinfo,\my $err);
+  my @devs = Net::Pcap::findalldevs(\my %devinfo,\my $err);
   my @result;
   for my $device (@devs) {
     (Net::Pcap::lookupnet($device, \(my $address), \(my $netmask), \$err) == 0) or next;
-    
+
     #print "$device / $address / $netmask\n";
     #for ($address,$netmask) {
     #  print ((join ".", unpack "C4", pack "N", $_),"\n");
     #};
-    
+
     $address != 0 or next;
-    
+
     for ($address,$netmask) {
       $_ = unpack "N", pack "N", $_;
     };
     #print "$device / $address / $netmask\n";
-    
+
     if ($address == ($good_address & $netmask)) {
       push @result, $device;
     };
   };
   @result
-};
-
-# Another compatibility layer
-# supported because Net::Pcap 0.04b is the only
-# version available as PPM
-
-sub net_pcap_findalldevs {
-  if ($Net::Pcap::VERSION < 0.07) {
-    return Net::Pcap::findalldevs($_[1], $_[0]);
-  } else {
-    return Net::Pcap::findalldevs($_[0],$_[1]);
-  };
 };
 
 1;

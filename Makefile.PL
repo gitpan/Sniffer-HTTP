@@ -9,7 +9,7 @@ WriteMakefile(
                         'HTTP::Request'   => 0,
                         'LWP::Simple'     => 0, # for one test. Should be bundled with HTTP::Request anyway
                         'NetPacket::TCP'  => 0,
-                        'Net::Pcap'       => 0.04, # You should use 0.09 when it comes out
+                        'Net::Pcap'       => 0.09,
                       }, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM => 'lib/Sniffer/HTTP.pm', # retrieve abstract from module

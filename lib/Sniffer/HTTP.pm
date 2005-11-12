@@ -12,7 +12,7 @@ use Carp qw(croak);
 
 use vars qw($VERSION);
 
-$VERSION = '0.11';
+$VERSION = '0.12';
 
 =head1 NAME
 
@@ -129,7 +129,7 @@ sub new {
 Removes a connection (or a key) from the list
 of connections. This will not have the intended
 effect if the connection is still alive, as it
-will be recreated as soon as the next packet 
+will be recreated as soon as the next packet
 for it is received.
 
 =cut

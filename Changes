@@ -1,20 +1,29 @@
-outstanding for 0.12:
+outstanding for later:
 
 Net::Pcap::FindDevice:
     - Spin off as a separate distribution
-    
+
 Sniffer::HTTP
     - implement multiple outstanding requests/responses for one connection
+    - find out why it doesn't listen on just port 80
 
-v0.11 (200511xx):
-      - Refactored code out into Net::Pcap::FindDevice which 
+v0.12 (20051112):
+      - live-http-headers.pl now also outputs the status message
+        of the response.
+      - dropped support for v0.04 of Net::Pcap, as there is a
+        PPM for Net::Pcap v0.09 on uwinnipeg now:
+          Perl 5.6: http://theoryx5.uwinnipeg.ca/ppmpackages
+          Perl 5.8: http://theoryx5.uwinnipeg.ca/ppms
+
+v0.11 (20051107):
+      - Refactored code out into Net::Pcap::FindDevice which
         will soon begin a life of its own in a separate distribution
         (thanks to Bart Lateur and James Mastros)
       - You can specify a device by IP and not just by name or description.
         (suggested by Bart Lateur)
       - The live-capture test t/05 now has an alarm() to kill
         itself if it takes over 60 seconds.
- 
+
 v0.10 (20051106):
       - Staleness calbacks didn't work at all. Fixed now.
 
