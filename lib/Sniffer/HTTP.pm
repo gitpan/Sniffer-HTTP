@@ -12,7 +12,7 @@ use Carp qw(croak);
 
 use vars qw($VERSION);
 
-$VERSION = '0.12';
+$VERSION = '0.13';
 
 =head1 NAME
 
@@ -251,6 +251,7 @@ of C<time()>.
 
 sub handle_eth_packet {
   my ($self,$eth,$ts) = @_;
+  #print $eth;
   $ts ||= time();
   $self->handle_ip_packet(NetPacket::Ethernet->decode($eth)->{data}, $ts);
 };
@@ -316,7 +317,7 @@ The C<%OPTIONS> can be the following options:
 
   capture_file - filename to which the whole capture stream is
                  written, in L<Net::Pcap> format. This is mostly
-                 useful for remote debugging a problematic
+                 useful for remote debugging of a problematic
                  sequence of connections.
 
 =cut

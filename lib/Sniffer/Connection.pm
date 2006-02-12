@@ -33,7 +33,7 @@ for sniffing some out-of-order TCP connection.
 
 use vars qw($VERSION);
 
-$VERSION = '0.12';
+$VERSION = '0.13';
 
 my @callbacks = qw(sent_data received_data closed teardown log);
 __PACKAGE__->mk_accessors(qw(src_port dest_port src_host dest_host status last_ack window last_activity), @callbacks);
@@ -89,6 +89,7 @@ sub handle_packet {
   if ($self->flow eq '-:-') {
     $self->init_from_packet($tcp);
   };
+  # warn $tcp;
 
   my $key = $self->flow;
   my @dir = ('src', 'dest');

@@ -7,6 +7,14 @@ Sniffer::HTTP
     - implement multiple outstanding requests/responses for one connection
     - find out why it doesn't listen on just port 80
 
+v0.13 (200602xx):
+      - added missing dependency on Exporter::Lite (reported by J. Jore)
+      - added prerequisite of libpcap of at least 0.8
+      - fixed stupid error that never let you specify an interface
+      - disabled the 'any' device as it returns frames in a format
+        that is different from Ethernet frames (and the libpcap
+        documentation is opaque to me in that regard)
+
 v0.12 (20051112):
       - live-http-headers.pl now also outputs the status message
         of the response.

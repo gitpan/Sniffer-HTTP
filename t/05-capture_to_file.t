@@ -4,9 +4,11 @@ use Test::More tests => 4;
 use Data::Dumper;
 
 use Net::Pcap;
+use Net::Pcap::FindDevice;
 use LWP::Simple;
 
 use_ok 'Sniffer::HTTP';
+diag 'Using ' . &Net::Pcap::lib_version;
 
 my $s = Sniffer::HTTP->new(
   callbacks => {
@@ -21,10 +23,12 @@ my (@responses,@requests);
 sub collect_response {
   my ($res,$req,$conn) = @_;
   push @responses, [$res,$req];
+  diag "Breaking out of Pcap loop";
   Net::Pcap::breakloop($s->pcap_device);
 };
 sub collect_request {
   my ($req,$conn) = @_;
+  diag "Got request";
   push @requests, $req;
 };
 
@@ -41,6 +45,8 @@ if (-f $dumpfile) {
     or diag "Couldn't remove '$dumpfile': $!";
 };
 
+my $dev = find_device;
+diag "Using device '$dev'";
 SKIP: {
   if ($ENV{HTTP_PROXY}) {
     skip 4, "Proxy settings detected - sniffing will not work";
@@ -48,14 +54,15 @@ SKIP: {
 
 # This version of fork() works even on Win32:
 if (fork()) {
-  alarm 60; # Emergency breakout
-  $s->run(undef,"((dst www.cpan.org || src www.cpan.org)) && (tcp port 80)", capture_file => $dumpfile);
+  alarm 65; # Emergency breakout
+  $s->run($dev,"((dst www.cpan.org || src www.cpan.org)) && (tcp port 80)", capture_file => $dumpfile);
   alarm 0;
 } else {
   diag "Launching request to '$url'";
   sleep 1;
   alarm 55; # Emergency breakout
-  get $url;
+  get $url or diag "Couldn't retrieve '$url'";
+  diag "Child done.";
   alarm 0;
   exit;
 };
