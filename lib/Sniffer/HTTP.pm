@@ -12,7 +12,7 @@ use Carp qw(croak);
 
 use vars qw($VERSION);
 
-$VERSION = '0.13';
+$VERSION = '0.14';
 
 =head1 NAME
 
@@ -165,12 +165,11 @@ sub find_or_create_connection {
   if (! exists $connections->{$key}) {
     my $key2 = $tcp->{dest_port} . ":" . $tcp->{src_port};
     if (! exists $connections->{$key2}) {
-      $self->callbacks->{log}->("Creating connection $key");
+      $self->callbacks->{log}->("Creating connection $key, sequence start at " . $tcp->{seqnum});
       my $c = $self->callbacks;
-      #warn Dumper $c;
       my $o = Sniffer::Connection::HTTP->new(
         %$c,
-        tcp           => $tcp,
+        tcp            => $tcp,
       );
       $connections->{$key} = $o;
     } else {
@@ -251,8 +250,8 @@ of C<time()>.
 
 sub handle_eth_packet {
   my ($self,$eth,$ts) = @_;
-  #print $eth;
   $ts ||= time();
+  #warn Dumper( NetPacket::Ethernet->decode($eth) );
   $self->handle_ip_packet(NetPacket::Ethernet->decode($eth)->{data}, $ts);
 };
 
@@ -269,7 +268,16 @@ of C<time()>.
 sub handle_ip_packet {
   my ($self,$ip,$ts) = @_;
   $ts ||= time();
-  $self->handle_tcp_packet(NetPacket::IP->decode($ip)->{data}, $ts);
+  #warn Dumper( NetPacket::IP->decode($ip) );
+  # This is a workaround around a bug in NetPacket::IP v0.04, which sets the
+  # payload to include the trailer
+  my $i = NetPacket::IP->decode($ip);
+
+  # Safeguard against malformed IP headers
+  $i->{hlen} = 5
+      if $i->{hlen} < 5;
+  #warn sprintf "Data length: %d/%d", length $i->{data}, $i->{len} - ($i->{hlen}*4);
+  $self->handle_tcp_packet(substr($i->{data}, 0, $i->{len}-($i->{hlen}*4)), $ts);
 };
 
 =head2 C<< $sniffer->handle_tcp_packet TCP [, TIMESTAMP] >>
@@ -293,6 +301,7 @@ sub handle_tcp_packet {
   if (! ref $tcp) {
     $tcp = NetPacket::TCP->decode($tcp);
   };
+  #warn $tcp->{src_port}.":".$tcp->{dest_port};;
   my $conn = $self->find_or_create_connection($tcp);
   $conn->handle_packet($tcp,$ts);
   # Handle callbacks for detection of stale connections

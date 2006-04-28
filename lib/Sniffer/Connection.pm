@@ -33,10 +33,15 @@ for sniffing some out-of-order TCP connection.
 
 use vars qw($VERSION);
 
-$VERSION = '0.13';
+$VERSION = '0.14';
 
 my @callbacks = qw(sent_data received_data closed teardown log);
-__PACKAGE__->mk_accessors(qw(src_port dest_port src_host dest_host status last_ack window last_activity), @callbacks);
+__PACKAGE__->mk_accessors(qw(
+   src_port dest_port
+   src_host dest_host
+   status last_ack window last_activity
+   sequence_start ack_start
+), @callbacks);
 
 sub new {
   my($class,%args) = @_;
@@ -67,6 +72,8 @@ Initializes the connection data from a packet.
 
 sub init_from_packet {
   my ($self, $tcp) = @_;
+  $self->sequence_start( $tcp->{seqnum} );
+  $self->ack_start( $tcp->{acknum} );
   $self->src_port($tcp->{src_port});
   $self->dest_port($tcp->{dest_port});
 };
@@ -83,23 +90,26 @@ to the value of C<time>.
 
 =cut
 
+my $count;
 sub handle_packet {
   my ($self, $tcp, $timestamp) = @_;
 
   if ($self->flow eq '-:-') {
     $self->init_from_packet($tcp);
   };
-  # warn $tcp;
+  if ($self->ack_start == 0 and $tcp->{acknum}) {
+      $self->ack_start( $tcp->{acknum} );
+  };
 
   my $key = $self->flow;
   my @dir = ('src', 'dest');
-  #warn $self->signature($tcp) . "/" . $key;
   if ($self->signature($tcp) ne $key) {
     @dir = reverse @dir;
   };
 
   # Overwrite older sequence numbers
   $self->window->{$dir[0]}->{ $tcp->{seqnum} } = $tcp;
+  #warn sprintf "%d: %d SEQ: %d ACK: %d", $count++, $tcp->{src_port}, $tcp->{seqnum} - $self->sequence_start, $tcp->{acknum} - $self->ack_start;
 
   $self->flush_window($dir[1], $tcp->{acknum});
   $self->update_activity($timestamp);
@@ -255,7 +265,7 @@ Max Maischein (corion@cpan.org)
 
 =head1 COPYRIGHT
 
-Copyright (C) 2005 Max Maischein.  All Rights Reserved.
+Copyright (C) 2005,2006 Max Maischein.  All Rights Reserved.
 
 This code is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

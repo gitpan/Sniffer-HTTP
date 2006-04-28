@@ -31,7 +31,7 @@ use base 'Class::Accessor';
 
 use vars qw($VERSION);
 
-$VERSION = '0.13';
+$VERSION = '0.14';
 
 my @callbacks = qw(request response closed log);
 __PACKAGE__->mk_accessors(qw(tcp_connection sent_buffer recv_buffer _response _response_chunk_size _response_len _request prev_request),
@@ -75,12 +75,14 @@ sub received_data {
   my ($self,$data,$conn) = @_;
   $self->flush_sent;
   ${$self->{recv_buffer}} .= $data;
+  #warn $data;
   $self->flush_received;
 };
 
 sub extract_chunksize {
   my ($self,$buffer) = @_;
   my $chunksize;
+  #$self->log->("---Extracting from\n$$buffer\n---");
   if (! ($$buffer =~ s!^\s*([a-f0-9]+)[ \t]*\r\n!!si)) {
     $self->log->("Extracting chunked size failed.");
     #$self->log->($$buffer);
@@ -93,12 +95,14 @@ sub extract_chunksize {
     #$self->log->(length $$buffer);
     $self->_response_chunk_size($chunksize);
   };
+  #$self->log->("---Buffer is now\n$$buffer\n---");
   return $chunksize
 };
 
 sub flush_received {
   my ($self) = @_;
   my $buffer = $self->recv_buffer;
+  #$self->log->($$buffer);
   while ($$buffer) {
     if (! (my $res = $self->_response)) {
       # We need to find something that looks like a valid HTTP request in our stream
@@ -136,7 +140,7 @@ sub flush_received {
       };
 
       if (defined $chunksize) {
-        $self->log->("Chunked size: $chunksize\n");
+        #$self->log->("Chunked size: $chunksize\n");
         #$self->log->("Got buffer of size " + length $$buffer);
 
         while (defined $chunksize and length $$buffer >= $chunksize) {
@@ -144,22 +148,25 @@ sub flush_received {
           #$self->log->(">>$$buffer<<");
           $self->_response->add_content(substr($$buffer,0,$chunksize));
           #$self->log->(substr($$buffer,0,$chunksize));
-          #$self->log->(sprintf "Remaining are %s bytes", length $$buffer);
           $$buffer = substr($$buffer,$chunksize);
+          $$buffer =~ s!^\r\n!!;
+          #$self->log->(sprintf "Remaining are %s bytes ($$buffer)", length $$buffer);
 
           $self->_response_chunk_size(undef);
           if ($chunksize == 0) {
             $self->log->("Got chunksize 0, reporting response");
             $self->report_response($res);
-            $$buffer =~ s!^\r\n!!;
+            #$$buffer =~ s!^\r\n!!;
 
             if ($$buffer eq '') {
               return;
             };
-          } else {
+          } elsif (length $$buffer) {
             # Get next chunksize, if available
             $chunksize = $self->extract_chunksize($buffer);
             #$self->log->("Next size is $chunksize");
+          } else {
+            # We've read/received exactly the chunk.
           };
 
           return

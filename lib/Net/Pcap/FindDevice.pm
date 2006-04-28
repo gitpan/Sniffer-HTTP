@@ -5,7 +5,7 @@ use Carp qw(croak);
 use Exporter::Lite;
 
 use vars qw($VERSION @EXPORT);
-$VERSION = '0.13';
+$VERSION = '0.14';
 @EXPORT = qw(find_device);
 
 =head1 NAME
@@ -153,6 +153,7 @@ sub interfaces_from_ip {
   my @devs = Net::Pcap::findalldevs(\my %devinfo,\my $err);
   my @result;
   for my $device (@devs) {
+    #warn "$device/$ip";
     (Net::Pcap::lookupnet($device, \(my $address), \(my $netmask), \$err) == 0) or next;
 
     #print "$device / $address / $netmask\n";
