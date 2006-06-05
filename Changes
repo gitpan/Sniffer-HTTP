@@ -7,6 +7,14 @@ Sniffer::HTTP
     - implement multiple outstanding requests/responses for one connection
     - find out why it doesn't listen on just port 80
 
+v0.15 (20060605):
+      - Added the missing File::Slurp prerequisite, found by Joshua Ben Jore
+      - No code/functionality changes
+
+v0.14 (20060426):
+      - Fixed a bug where too much data was parsed, thanks to Karl Pietri
+        for the report and capture file
+
 v0.13 (200602xx):
       - added missing dependency on Exporter::Lite (reported by J. Jore)
       - added prerequisite of libpcap of at least 0.8
