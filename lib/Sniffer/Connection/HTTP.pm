@@ -31,7 +31,7 @@ use base 'Class::Accessor';
 
 use vars qw($VERSION);
 
-$VERSION = '0.15';
+$VERSION = '0.16';
 
 my @callbacks = qw(request response closed log);
 __PACKAGE__->mk_accessors(qw(tcp_connection sent_buffer recv_buffer _response _response_chunk_size _response_len _request prev_request),
@@ -133,7 +133,7 @@ sub flush_received {
     my $len = $self->_response_len;
     my $chunksize = $self->_response_chunk_size;
 
-    my $te = $res->header('Transfer-Encoding');
+    my $te = lc $res->header('Transfer-Encoding');
     if ($te and $te eq 'chunked') {
       if (! defined $chunksize) {
         $chunksize = $self->extract_chunksize($buffer);

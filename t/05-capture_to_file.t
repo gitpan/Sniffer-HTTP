@@ -48,39 +48,53 @@ if (-f $dumpfile) {
 my $dev = find_device;
 diag "Using device '$dev'";
 SKIP: {
-  if ($ENV{HTTP_PROXY}) {
-    skip 4, "Proxy settings detected - sniffing will not work";
-  };
+    if ($ENV{HTTP_PROXY}) {
+        skip "Proxy settings detected - sniffing will not work", 3;
+    };
 
-# This version of fork() works even on Win32:
-if (fork()) {
-  alarm 65; # Emergency breakout
-  $s->run($dev,"((dst www.cpan.org || src www.cpan.org)) && (tcp port 80)", capture_file => $dumpfile);
-  alarm 0;
-} else {
-  diag "Launching request to '$url'";
-  sleep 1;
-  alarm 55; # Emergency breakout
-  get $url or diag "Couldn't retrieve '$url'";
-  diag "Child done.";
-  alarm 0;
-  exit;
-};
+    my $failed;
 
-ok -f $dumpfile, "A dump was created in '$dumpfile'";
+    # This version of fork() works even on Win32:
+    if (fork()) {
+      alarm 65; # Emergency breakout
+      eval {
+          $s->run($dev,"((dst www.cpan.org || src www.cpan.org)) && (tcp port 80)", capture_file => $dumpfile);
+      };
+      $failed = $@;
+      alarm 0;
+    } else {
+      diag "Launching request to '$url'";
+      sleep 1;
+      alarm 55; # Emergency breakout
+      get $url or diag "Couldn't retrieve '$url'";
+      diag "Child done.";
+      alarm 0;
+      exit;
+    };
 
-my @stale = $s->stale_connections();
-is_deeply(\@stale,[],"No stale connections");
-
-my @live = $s->live_connections();
-# Well, not actually, but close enough. The live connection
-# gets closed one TCP packet later, but we trigger the break
-# out of the loop too early for that.
-is scalar(@live), 1, "One live connection";
-
-if (-f $dumpfile) {
-  diag "Removing dumpfile '$dumpfile'";
-  unlink $dumpfile
-    or diag "Couldn't remove '$dumpfile': $!";
-};
+    SKIP: {
+        if ($failed && $< != 0) {
+            diag "Couldn't sniff: $failed";
+            diag "Are you sure you have the proper permissions?";
+            diag "Maybe you need to be root to get the proper permissions. Your user id is $<";
+            skip "Couldn't sniff: $failed", 3;
+        } else {
+            ok -f $dumpfile, "A dump was created in '$dumpfile'";
+    
+            my @stale = $s->stale_connections();
+            is_deeply(\@stale,[],"No stale connections");
+    
+            my @live = $s->live_connections();
+            # Well, not actually, but close enough. The live connection
+            # gets closed one TCP packet later, but we trigger the break
+            # out of the loop too early for that.
+            is scalar(@live), 1, "One live connection";
+    
+            if (-f $dumpfile) {
+                diag "Removing dumpfile '$dumpfile'";
+                unlink $dumpfile
+                  or diag "Couldn't remove '$dumpfile': $!";
+            };
+        };
+    };
 };

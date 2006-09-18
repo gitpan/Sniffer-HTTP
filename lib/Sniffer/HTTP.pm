@@ -12,7 +12,7 @@ use Carp qw(croak);
 
 use vars qw($VERSION);
 
-$VERSION = '0.15';
+$VERSION = '0.16';
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ Sniffer::HTTP - multi-connection sniffer driver
       log      => sub { print $_[0] if $VERBOSE },
       tcp_log  => sub { print $_[0] if $VERBOSE > 1 },
     },
-    timeout = 5*60, # seconds after which a connection is considered stale
+    timeout => 5*60, # seconds after which a connection is considered stale
     stale_connection
       => sub { my ($s,$conn,$key);
                $s->log->("Connection $key is stale.");
@@ -433,29 +433,29 @@ sub run_file {
 
 =head1 CALLBACKS
 
-=head2 C<<request REQ, CONN>>
+=head2 C<< request REQ, CONN >>
 
 The C<request> callback is called with the parsed request and the connection
 object. The request will be an instance of [cpan://HTTP::Request] and will
 have an absolute URI if possible. Currently, the hostname for the absolute URI
 is constructed from the C<Host:> header.
 
-=head2 C<<response RES, REQ, CONN>>
+=head2 C<< response RES, REQ, CONN >>
 
 The C<response> callback is called with the parsed response, the request
 and the connection object.
 
-=head2 C<<log MESSAGE>>
+=head2 C<< log MESSAGE >>
 
 The C<log> callback is called whenever the connection makes progress
 and in other various situations.
 
-=head2 C<<tcp_log MESSAGE>>
+=head2 C<< tcp_log MESSAGE >>
 
 The C<tcp_log> callback is passed on to the underlying C<Sniffer::Connection>
 object and can be used to monitor the TCP connection.
 
-=head2 C<<stale_connection SNIFFER, CONN >>
+=head2 C<< stale_connection SNIFFER, CONN >>
 
 Is called whenever a connection goes over the C<timeout> limit
 without any activity. The default handler weeds out stale

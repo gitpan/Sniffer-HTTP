@@ -7,6 +7,14 @@ Sniffer::HTTP
     - implement multiple outstanding requests/responses for one connection
     - find out why it doesn't listen on just port 80
 
+v0.16 (not yet released):
+      - Fixed a typo in the synopsis of HTTP::Sniffer
+      - POD fixes
+      - "Transfer-Encoding: chunked" is now case insensitive, thanks to
+        Andre Nurwono
+      - Fix t/05-dump-to-file.t to gracefully fail if the user
+        cannot sniff due to (likely) permission problems.
+
 v0.15 (20060605):
       - Added the missing File::Slurp prerequisite, found by Joshua Ben Jore
       - No code/functionality changes
