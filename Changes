@@ -7,7 +7,21 @@ Sniffer::HTTP
     - implement multiple outstanding requests/responses for one connection
     - find out why it doesn't listen on just port 80
 
-v0.16 (not yet released):
+v0.17 (20070113):
+      - James Mastros suggested skipping more tests if not
+        running as root on non-Win32 platforms. The tests now
+	output a warning if you are not on Win32 and $> is nonzero.
+	The tests will still be run but likely you need to execute
+	them using
+
+	    sudo make test
+
+	to get results unobstructed by permissions. This
+	affects
+	    t/01-find-device.t
+	    t/05-dump-to-file.t
+
+v0.16 (20060918):
       - Fixed a typo in the synopsis of HTTP::Sniffer
       - POD fixes
       - "Transfer-Encoding: chunked" is now case insensitive, thanks to

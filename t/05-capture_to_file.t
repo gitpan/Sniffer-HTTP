@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 use strict;
-use Test::More tests => 4;
+use Test::More tests => 5;
 use Data::Dumper;
 
 use Net::Pcap;
@@ -9,6 +9,11 @@ use LWP::Simple;
 
 use_ok 'Sniffer::HTTP';
 diag 'Using ' . &Net::Pcap::lib_version;
+
+# If we're on a unixish system, make sure we're root
+if ($^O ne "MSWin32" and ($> != 0)) {
+    diag "We are not root. find_device() might be unreliable and tests might fail.";
+};
 
 my $s = Sniffer::HTTP->new(
   callbacks => {
@@ -45,7 +50,17 @@ if (-f $dumpfile) {
     or diag "Couldn't remove '$dumpfile': $!";
 };
 
-my $dev = find_device;
+my $dev = eval { find_device() };
+{
+    my $err = $@;
+    if (not is $err, '', "No error looking for device") {
+        SKIP: {
+	    skip $err, 3
+	};
+	exit
+    };
+}
+
 diag "Using device '$dev'";
 SKIP: {
     if ($ENV{HTTP_PROXY}) {

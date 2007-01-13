@@ -5,7 +5,7 @@ use Carp qw(croak);
 use Exporter::Lite;
 
 use vars qw($VERSION @EXPORT);
-$VERSION = '0.16';
+$VERSION = '0.17';
 @EXPORT = qw(find_device);
 
 =head1 NAME
@@ -57,11 +57,14 @@ sub find_device {
   my ($device_name) = @_;
   # Set up Net::Pcap
   my @devs = Net::Pcap::findalldevs(\my %devinfo,\my $err);
+  $err ||= '';
   if (! @devs) {
     croak <<NO_DEVICE
 Net::Pcap didn't find any device: ($err).
-This may be because your version of libpcap
-is too low.";
+This may be because your version of libpcap is too
+low or you might not have the sufficient
+privileges. You might also not have any networking
+installed on this system.
 NO_DEVICE
   };
 

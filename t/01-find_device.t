@@ -1,19 +1,32 @@
 #!/usr/bin/perl -w
 use strict;
-use Test::More tests => 11;
+use Test::More tests => 12;
 
 use_ok 'Net::Pcap::FindDevice';
 
 diag "Pcap lib_version is " . Net::Pcap::lib_version();
 
 if (&Net::Pcap::lib_version() eq 'libpcap version unknown (pre 0.8)') {
-  SKIP: {
-  skip "libpcap version too low", 10;
-  };
-  exit;
+    SKIP: {
+        skip "libpcap version too low", 11;
+    };
+    exit;
 };
 
-my $name = find_device();
+if ($^O ne "MSWin32" and $> != 0) {
+    diag "You're not running the tests as root - they might fail";
+};
+my $name = eval { find_device() };
+
+{
+    my $err = $@;
+    if (not is $err, '', "No error looking for devices") {
+        SKIP: {
+            skip "find_device error: $err", 10;
+        };
+        exit;
+    };
+};
 
 isn't $name, undef, "Found a device";
 is find_device($name), $name, "find_device returns the same device if one is given";
