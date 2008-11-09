@@ -7,6 +7,10 @@ Sniffer::HTTP
     - implement multiple outstanding requests/responses for one connection
     - find out why it doesn't listen on just port 80
 
+v0.18 (20081109):
+      - Bail out of testing if no device is found by Net::Pcap
+      . Only test changes, no upgrade necessary.
+
 v0.17 (20070113):
       - James Mastros suggested skipping more tests if not
         running as root on non-Win32 platforms. The tests now

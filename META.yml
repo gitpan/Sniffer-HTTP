@@ -1,10 +1,13 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Sniffer-HTTP
-version:      0.17
-version_from: lib/Sniffer/HTTP.pm
-installdirs:  site
-requires:
+--- #YAML:1.0
+name:                Sniffer-HTTP
+version:             0.18
+abstract:            multi-connection sniffer driver
+license:             ~
+author:              
+    - Max Maischein <corion@cpan.org>
+generated_by:        ExtUtils::MakeMaker version 6.42
+distribution_type:   module
+requires:     
     Class::Accessor:               0
     Class::Data::Inheritable:      0
     Exporter::Lite:                0
@@ -12,6 +15,6 @@ requires:
     LWP::Simple:                   0
     Net::Pcap:                     0.09
     NetPacket::TCP:                0
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3

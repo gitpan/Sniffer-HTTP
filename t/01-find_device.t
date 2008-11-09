@@ -21,10 +21,7 @@ my $name = eval { find_device() };
 {
     my $err = $@;
     if (not is $err, '', "No error looking for devices") {
-        SKIP: {
-            skip "find_device error: $err", 10;
-        };
-        exit;
+        BAIL_OUT "find_device error: $err";
     };
 };
 
