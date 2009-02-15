@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Sniffer-HTTP
-version:             0.18
+version:             0.19
 abstract:            multi-connection sniffer driver
 license:             ~
 author:              

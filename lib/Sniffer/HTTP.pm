@@ -12,7 +12,7 @@ use Carp qw(croak);
 
 use vars qw($VERSION);
 
-$VERSION = '0.18';
+$VERSION = '0.19';
 
 =head1 NAME
 
@@ -276,8 +276,12 @@ sub handle_ip_packet {
   # Safeguard against malformed IP headers
   $i->{hlen} = 5
       if $i->{hlen} < 5;
-  #warn sprintf "Data length: %d/%d", length $i->{data}, $i->{len} - ($i->{hlen}*4);
-  $self->handle_tcp_packet(substr($i->{data}, 0, $i->{len}-($i->{hlen}*4)), $ts);
+  my $conn = $self->handle_tcp_packet(substr($i->{data}, 0, $i->{len}-($i->{hlen}*4)), $ts);
+  unless($conn->tcp_connection->dest_host) {
+    $conn->tcp_connection->dest_host($i->{dest_ip});
+    $conn->tcp_connection->src_host($i->{src_ip});
+  }
+  $conn;
 };
 
 =head2 C<< $sniffer->handle_tcp_packet TCP [, TIMESTAMP] >>
