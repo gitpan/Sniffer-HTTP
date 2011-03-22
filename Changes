@@ -7,6 +7,9 @@ Sniffer::HTTP
     - implement multiple outstanding requests/responses for one connection
     - find out why it doesn't listen on just port 80
 
+v0.20 (2009xxxx):
+      - POD fixes
+
 v0.19 (20090215):
       - Sniffer::HTTP: src_port and dst_port are now initialized from the
         first packet if they are yet unset

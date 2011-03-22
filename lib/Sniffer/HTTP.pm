@@ -12,7 +12,7 @@ use Carp qw(croak);
 
 use vars qw($VERSION);
 
-$VERSION = '0.19';
+$VERSION = '0.20';
 
 =head1 NAME
 
@@ -440,7 +440,7 @@ sub run_file {
 =head2 C<< request REQ, CONN >>
 
 The C<request> callback is called with the parsed request and the connection
-object. The request will be an instance of [cpan://HTTP::Request] and will
+object. The request will be an instance of L<HTTP::Request> and will
 have an absolute URI if possible. Currently, the hostname for the absolute URI
 is constructed from the C<Host:> header.
 

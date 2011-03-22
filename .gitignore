@@ -1,0 +1,13 @@
+blib
+Makefile
+Sniffer-HTTP-*
+*.old
+*.bak
+*.tar.gz
+*.tar
+pm_to_blib
+pm_to_blib.ts
+.lwpcookies
+.releaserc
+META.yml
+blibdirs.ts

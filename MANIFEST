@@ -32,3 +32,5 @@ t/99-pod.t
 t/99-todo.t
 t/99-unix-text.t
 META.yml                                 Module meta-data (added by MakeMaker)
+.gitignore
+.cvsignore
