@@ -1,18 +1,29 @@
 #!/usr/bin/perl -w
 use strict;
-use Test::More tests => 5;
+use Test::More tests => 4;
 use Data::Dumper;
 
 use Net::Pcap;
+diag 'Using ' . &Net::Pcap::lib_version;
 use Net::Pcap::FindDevice;
 use LWP::Simple;
 
-use_ok 'Sniffer::HTTP';
-diag 'Using ' . &Net::Pcap::lib_version;
-
-# If we're on a unixish system, make sure we're root
-if ($^O ne "MSWin32" and ($> != 0)) {
+use Sniffer::HTTP;
+use Net::Pcap::FindDevice;
+if ($^O ne "MSWin32" and $> != 0) {
     diag "We are not root. find_device() might be unreliable and tests might fail.";
+};
+
+my $name;
+my $ok = eval { $name = find_device(); 1 };
+{
+    my $err = $@;
+    if (not $ok) {
+        SKIP: {
+            skip "Did not find any capture device", 4;
+        };
+        exit
+    };
 };
 
 my $s = Sniffer::HTTP->new(

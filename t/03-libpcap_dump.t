@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 use strict;
-use Test::More tests => 8;
+use Test::More tests => 7;
 use Data::Dumper;
 
 my (@responses,@requests);
@@ -13,7 +13,24 @@ sub collect_request {
   push @requests, $req;
 };
 
-use_ok 'Sniffer::HTTP';
+use Sniffer::HTTP;
+use Net::Pcap::FindDevice;
+
+if ($^O ne "MSWin32" and $> != 0) {
+    diag "You're not running the tests as root - they might fail";
+};
+
+my $name;
+my $ok = eval { $name = find_device(); 1 };
+{
+    my $err = $@;
+    if (not $ok) {
+        SKIP: {
+            skip "Did not find any capture device", 7;
+        };
+        exit
+    };
+};
 
 my $stale_count;
 

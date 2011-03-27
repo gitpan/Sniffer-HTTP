@@ -6,19 +6,21 @@ use Data::Dumper;
 use NetPacket::Ethernet qw(:strip);
 use NetPacket::IP;
 use IO::Handle;
+use File::Basename qw(basename);
 
 =head1 NAME
 
 dump-raw - Dumps a packet stream suitable for the test suite
 
+=head1 SYNOPSIS
+
+dump-raw [device] [filter]
+
 =cut
 
 $|++;
 
-my ($err);
-my %devinfo;
-
-my $pattern = "$0-dump-raw.$$.%05g.dump";
+my $pattern = (basename $0) . "-dump-raw.$$.%05g.dump";
 
 my ($usr_device, $pcap_filter) = @ARGV;
 my $device_name = $ARGV[0] || 'any';
@@ -44,6 +46,7 @@ warn "Using '$devinfo{$device}'\n";
 
 $pcap_filter ||= '(dst localhost && (port 80))  || (src localhost && (port 80))';
 
+$|++;
 my $frame = 0;
 sub process_packet {
   my($user_data, $header, $packet) = @_;

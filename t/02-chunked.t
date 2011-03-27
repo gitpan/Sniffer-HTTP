@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 use strict;
-use Test::More tests => 5;
+use Test::More tests => 4;
 use Data::Dumper;
 
 use NetPacket::TCP;
@@ -17,7 +17,24 @@ sub collect_request {
   #diag $res->code,"\n";
 };
 
-use_ok 'Sniffer::HTTP';
+use Sniffer::HTTP;
+use Net::Pcap::FindDevice;
+
+if ($^O ne "MSWin32" and $> != 0) {
+    diag "You're not running the tests as root - they might fail";
+};
+
+my $name;
+my $ok = eval { $name = find_device(); 1 };
+{
+    my $err = $@;
+    if (not $ok) {
+        SKIP: {
+            skip "Did not find any capture device", 4;
+        };
+        exit
+    };
+};
 
 my $s = Sniffer::HTTP->new(
   callbacks => {
@@ -86,4 +103,8 @@ my @stale = $s->stale_connections;
 is_deeply(\@stale,[],"No stale connections");
 
 my @live = $s->live_connections;
-is_deeply \@live, [], "All connections were closed";
+is_deeply \@live, [], "All connections were closed"
+    or do {
+      diag $_->flow
+          for @live;
+    };

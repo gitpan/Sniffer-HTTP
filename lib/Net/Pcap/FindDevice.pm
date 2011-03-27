@@ -5,7 +5,7 @@ use Carp qw(croak);
 use Exporter::Lite;
 
 use vars qw($VERSION @EXPORT);
-$VERSION = '0.19';
+$VERSION = '0.21';
 @EXPORT = qw(find_device);
 
 =head1 NAME

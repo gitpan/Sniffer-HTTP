@@ -7,8 +7,17 @@ Sniffer::HTTP
     - implement multiple outstanding requests/responses for one connection
     - find out why it doesn't listen on just port 80
 
-v0.20 (2009xxxx):
+v0.21 (20110327):
+      - Fix loop behaviour in Sniffer::HTTP::flush_window to process more
+        than one packet
+      . Add synopsis to dump-raw.pl
+      . Fix tests, again
+
+v0.20 (20110322):
       - POD fixes
+      - Reduced default value for snaplen libpcap parameter
+      - Made snaplen parameter configurable, after discussion in
+        http://perlmonks.org/?node_id=894262
 
 v0.19 (20090215):
       - Sniffer::HTTP: src_port and dst_port are now initialized from the

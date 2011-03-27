@@ -3,6 +3,7 @@ use strict;
 use lib 'lib';
 use Net::Pcap;
 use Sniffer::HTTP;
+use Net::Pcap::FindDevice;
 use Data::Dumper;
 
 =head1 NAME

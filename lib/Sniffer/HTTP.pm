@@ -12,7 +12,7 @@ use Carp qw(croak);
 
 use vars qw($VERSION);
 
-$VERSION = '0.20';
+$VERSION = '0.21';
 
 =head1 NAME
 
@@ -73,10 +73,30 @@ script that comes with the distribution.
 Creates a new object for handling many HTTP requests.
 You can pass in the following arguments:
 
-  connections      - preexisting connections (optional)
-  callbacks        - callbacks for the new connections (hash reference)
-  timeout          - timeout in seconds after which a connection is considered stale
-  stale_connection - callback for stale connections
+=over 4
+
+=item *
+
+C<connections>     - preexisting connections (optional)
+
+=item *
+
+C<callbacks>        - callbacks for the new connections (hash reference)
+
+=item *
+
+C<timeout>          - timeout in seconds after which a connection is considered stale
+
+=item *
+
+C<stale_connection> - callback for stale connections
+
+=item *
+
+C<snaplen> - maximum size of data to capture per packet. The default is 16384,
+which should be plenty for all cases.
+
+=back
 
 Usually, you will want to create a new object like this:
 
@@ -89,7 +109,7 @@ except that you will likely do more work than this example.
 
 =cut
 
-__PACKAGE__->mk_accessors(qw(connections callbacks timeout pcap_device stale_connection));
+__PACKAGE__->mk_accessors(qw(connections callbacks timeout pcap_device stale_connection snaplen));
 
 sub new {
   my ($class,%args) = @_;
@@ -102,6 +122,7 @@ sub new {
     $conn->log->("$key is stale.");
     $s->remove_connection($key);
   };
+  $args{ snaplen } ||= 16384;
 
   $args{timeout} = 300
     unless exists $args{timeout};
@@ -328,10 +349,31 @@ the device via C<find_device> from L<Net::Pcap::FindDevice>.
 
 The C<%OPTIONS> can be the following options:
 
-  capture_file - filename to which the whole capture stream is
-                 written, in L<Net::Pcap> format. This is mostly
-                 useful for remote debugging of a problematic
-                 sequence of connections.
+=over 4
+
+=item *
+
+C<capture_file> - filename to which the whole capture stream is
+written, in L<Net::Pcap> format.
+
+This is mostly
+useful for remote debugging of a problematic
+sequence of connections.
+
+=item *
+
+C<snaplen> - size of the L<Net::Pcap> capture buffer
+
+The size of this buffer can determine whether you lose packets
+while processing. A large value led to lost packets in at least one case.
+The default value is 16384.
+
+=item
+
+C<timeout> - the read timeout in ms while waiting for packets. The default is
+500 ms.
+
+=back
 
 =cut
 
@@ -340,6 +382,8 @@ sub run {
 
   my $device = find_device($device_name);
   $pcap_filter ||= "tcp port 80";
+  $options{ snaplen } ||= $self->snaplen;
+  $options{ timeout } ||= 500;
 
   my $err;
   my ($address, $netmask);
@@ -349,7 +393,7 @@ sub run {
   warn $err if $err;
 
   #   Create packet capture object on device
-  my $pcap = Net::Pcap::open_live($device, 128000, -1, 500, \$err);
+  my $pcap = Net::Pcap::open_live($device, $options{ snaplen }, -1, $options{ timeout }, \$err);
   unless (defined $pcap) {
     die "Unable to create packet capture on device '$device' - $err";
   };
@@ -369,14 +413,14 @@ sub run {
   my $save;
   if ($options{capture_file}) {
     $save = Net::Pcap::dump_open($pcap,$options{capture_file});
-    END {
-      # Emergency cleanup
-      if ($save) {
-        Net::Pcap::dump_flush($save);
-        Net::Pcap::dump_close($save);
-        undef $save;
-      }
-    };
+    #END {
+    #  # Emergency cleanup
+    #  if ($save) {
+    #    Net::Pcap::dump_flush($save);
+    #    Net::Pcap::dump_close($save);
+    #    undef $save;
+    #  }
+    #};
   };
 
   Net::Pcap::loop($pcap, -1, sub {
@@ -429,7 +473,6 @@ sub run_file {
   ) && die 'Unable to compile packet capture filter';
   Net::Pcap::setfilter($pcap,$filter);
 
-  #Net::Pcap::loop($pcap, -1, sub { $self->handle_eth_packet($_[2]) }, '');
   Net::Pcap::loop($pcap, -1, sub { $self->handle_eth_packet($_[2], $_[1]->{tv_sec}) }, '')
 };
 
@@ -493,6 +536,19 @@ actually get more data than you asked for.
 
 =head1 BUGS
 
+=head2 Closing Connections Properly
+
+Currently, it is not well-detected when a connection is closed by the
+starting side and no C<FIN ACK> packet is received from the remote side. This
+can even happen is you close the browser window instead of waiting
+for the connections to auto-close.
+
+I'm not sure how to fix this besides employing better guesswork
+and "closing" connections as soon as the C<FIN> packet gets sent.
+
+
+=head2 Small Testsuite
+
 The whole module suite has almost no tests.
 
 If you experience problems, I<please> supply me with a complete,
@@ -505,13 +561,13 @@ Max Maischein (corion@cpan.org)
 
 =head1 COPYRIGHT
 
-Copyright (C) 2005 Max Maischein.  All Rights Reserved.
+Copyright (C) 2005-2011 Max Maischein.  All Rights Reserved.
 
 This code is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<HTTP::Proxy>, ethereal, L<Sniffer::Connnection>
+L<HTTP::Proxy>, L<http://wireshark.org|Wireshark>, L<Sniffer::Connnection>
 
 =cut

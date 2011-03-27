@@ -12,3 +12,5 @@ CVS/
 ^blibdirs$
 bin/.*.sqlite$
 ^downloads/
+t/06-gmail_interaction.t
+t/gmail_http_sniffer.pcap
