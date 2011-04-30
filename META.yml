@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Sniffer-HTTP
-version:            0.21
+version:            0.22
 abstract:           multi-connection sniffer driver
 author:
     - Max Maischein <corion@cpan.org>

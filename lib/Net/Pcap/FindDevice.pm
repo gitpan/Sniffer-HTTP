@@ -5,7 +5,7 @@ use Carp qw(croak);
 use Exporter::Lite;
 
 use vars qw($VERSION @EXPORT);
-$VERSION = '0.21';
+$VERSION = '0.22';
 @EXPORT = qw(find_device);
 
 =head1 NAME
@@ -188,13 +188,13 @@ Max Maischein (corion@cpan.org)
 
 =head1 COPYRIGHT
 
-Copyright (C) 2005 Max Maischein.  All Rights Reserved.
+Copyright (C) 2005-2011 Max Maischein.  All Rights Reserved.
 
 This code is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<Net::Pcap>, ethereal, the Alsace in autumn
+L<Net::Pcap>, Wireshark, the Alsace in autumn
 
 =cut
