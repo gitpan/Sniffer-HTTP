@@ -7,6 +7,13 @@ Sniffer::HTTP
     - implement multiple outstanding requests/responses for one connection
     - find out why it doesn't listen on just port 80
 
+v0.23 (20120308):
+      - Make IP address detection work on other networks as well
+      - Remove reliance on Exporter::Lite in favour of a recent Exporter.pm
+      - Prepare for moving to Net::Inspect instead of hand-rolling
+        the TCP stack
+      - Silence a warning if no Transfer-Encoding header was received
+
 v0.22 (20110430):
       - More configurability of ->run(), suggested by Keith Schincke
       - C<device> can now be a preconfigured Net::Pcap device

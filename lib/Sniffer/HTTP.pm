@@ -12,7 +12,7 @@ use Carp qw(croak);
 
 use vars qw($VERSION);
 
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 =head1 NAME
 
@@ -440,6 +440,9 @@ sub run {
   my $save;
   if ($options{capture_file}) {
     $save = Net::Pcap::dump_open($pcap,$options{capture_file});
+    if(! $save) {
+      warn "Could not save to $options{capture_file}";
+    };
     #END {
     #  # Emergency cleanup
     #  if ($save) {

@@ -30,10 +30,10 @@ WriteMakefile(
     'PREREQ_PM'    => { 'Class::Accessor' => 0,
                         'Class::Data::Inheritable' => 0,
                         'HTTP::Request'   => 0,
-                        'LWP::Simple'     => 0, # for one test. Should be bundled with HTTP::Request anyway
+                        'LWP::Simple'     => 0, # for one test.
                         'NetPacket::TCP'  => 0,
-                        'Net::Pcap'       => 0.09,
-			'Exporter::Lite'  => 0,
+                        'Net::Pcap'       => '0.09',
+			'Exporter'         => '5.5',
                       }, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM => 'lib/Sniffer/HTTP.pm', # retrieve abstract from module
